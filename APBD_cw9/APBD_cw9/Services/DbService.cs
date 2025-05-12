@@ -127,4 +127,46 @@ public class DbService : IDbService
             throw;
         }
     }
+
+    public async Task<int> AddProductAsyncWithProcedureAsync(int idProduct, int idWarehouse, int amount, DateTime createdAt)
+    {
+        await using SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
+        await using SqlCommand command = new SqlCommand("AddProductToWarehouse", connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        try
+        {
+
+            //1
+            if (amount <= 0)
+            {
+                throw new ArgumentException("Amount must be greater than 0");
+            }
+
+            command.Parameters.AddWithValue("@idProduct", idProduct);
+            command.Parameters.AddWithValue("@idWarehouse", idWarehouse);
+            command.Parameters.AddWithValue("@amount", amount);
+            command.Parameters.AddWithValue("@createdAt", createdAt);
+
+            await connection.OpenAsync();
+
+            var result = await command.ExecuteScalarAsync();
+            if (result == null || result == DBNull.Value)
+            {
+                throw new InvalidOperationException("Procedure returned did not return a value");
+            }
+
+
+            command.Parameters.Clear();
+            return Convert.ToInt32(result);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+
+    }
 }

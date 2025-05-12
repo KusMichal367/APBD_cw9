@@ -17,7 +17,7 @@ public class WarehouseController : ControllerBase
         _dbService = dbService;
     }
 
-    [HttpPost]
+    [HttpPost("addProduct")]
     public async Task<IActionResult> AddProduct([FromBody] ProductAtWarehouseInfo request)
     {
         try
@@ -33,6 +33,33 @@ public class WarehouseController : ControllerBase
         catch (InvalidOperationException InOpEx)
         {
             return Conflict(InOpEx.Message);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex);
+        }
+    }
+
+    [HttpPost("addProductProcedure")]
+    public async Task<IActionResult> AddProductProcedure([FromBody] ProductAtWarehouseInfo request)
+    {
+        try
+        {
+            var newId = await _dbService.AddProductAsyncWithProcedureAsync(request.ProductId, request.WarehouseId,
+                request.Amount, request.CreatedAt);
+            return Ok(new { Id = newId });
+        }
+        catch (ArgumentException ArgEx)
+        {
+            return BadRequest(ArgEx.Message);
+        }
+        catch (InvalidOperationException InOpEx)
+        {
+            return Conflict(InOpEx.Message);
+        }
+        catch (SqlException SqlEx)
+        {
+            return BadRequest(SqlEx.Message);
         }
         catch (Exception ex)
         {
